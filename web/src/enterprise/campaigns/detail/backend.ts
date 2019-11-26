@@ -42,6 +42,19 @@ const campaignFragment = gql`
         changesets {
             totalCount
             nodes {
+                __typename
+                head {
+                    abbrevName
+                    target {
+                        oid
+                    }
+                }
+                base {
+                    abbrevName
+                    target {
+                        oid
+                    }
+                }
                 repository {
                     id
                     name

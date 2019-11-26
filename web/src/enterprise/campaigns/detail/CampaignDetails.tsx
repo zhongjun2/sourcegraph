@@ -34,16 +34,46 @@ import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { Link } from '../../../../../shared/src/components/Link'
-import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
+import {
+    switchMap,
+    tap,
+    catchError,
+    takeWhile,
+    concatMap,
+    repeatWhen,
+    delay,
+    withLatestFrom,
+    map,
+    filter,
+} from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
-import { isDefined } from '../../../../../shared/src/util/types'
+import { isDefined, propertyIsDefined } from '../../../../../shared/src/util/types'
 import { FileDiffTab } from './FileDiffTab'
 import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { EventLoggerProps } from '../../../tracking/eventLogger'
+import { HoveredToken, HoverOverlayProps, createHoverifier } from '@sourcegraph/codeintellify'
+import { getModeFromPath } from '../../../../../shared/src/languages'
+import { getHoverActions } from '../../../../../shared/src/hover/actions'
+import { WebHoverOverlay } from '../../../components/shared'
+import {
+    RepoSpec,
+    RevSpec,
+    FileSpec,
+    ResolvedRevSpec,
+    PositionSpec,
+    ModeSpec,
+} from '../../../../../shared/src/util/url'
+import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
+import { getHover } from '../../../backend/features'
+import { HoverContext } from '../../../../../shared/src/hover/HoverOverlay'
 
-interface Props extends ThemeProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, EventLoggerProps, ThemeProps {
     /**
      * The campaign ID.
      * If not given, will display a creation form.
@@ -82,6 +112,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     authenticatedUser,
     isLightTheme,
     isSourcegraphDotCom,
+    extensionsController,
+    platformContext,
+    telemetryService,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
@@ -92,6 +125,84 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
     const getNamespace = useCallback((): GQL.ID | undefined => namespace || namespaces?.[0].id, [namespace, namespaces])
+
+    function getLSPTextDocumentPositionParams(
+        hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+        return {
+            repoName: hoveredToken.repoName,
+            rev: hoveredToken.rev,
+            filePath: hoveredToken.filePath,
+            commitID: hoveredToken.commitID,
+            position: hoveredToken,
+            mode: getModeFromPath(hoveredToken.filePath || ''),
+        }
+    }
+
+    /** Emits whenever the ref callback for the hover element is called */
+    const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextOverlayElement = (element: HTMLElement | null): void => hoverOverlayElements.next(element)
+
+    /** Emits when the close button was clicked */
+    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
+    const nextCloseButtonClick = (event: MouseEvent): void => closeButtonClicks.next(event)
+
+    const componentUpdates = useMemo(
+        () =>
+            new Subject<
+                Pick<
+                    HoverOverlayProps<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>,
+                    'actionsOrError' | 'hoverOrError' | 'overlayPosition' | 'hoveredToken' | 'showCloseButton'
+                >
+            >(),
+        []
+    )
+
+    const repositoryCommitPageElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextRepositoryCommitPageElement = (element: HTMLElement | null): void =>
+        repositoryCommitPageElements.next(element)
+
+    const hoverifier = useMemo(
+        () =>
+            createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>({
+                closeButtonClicks,
+                hoverOverlayElements,
+                hoverOverlayRerenders: componentUpdates.pipe(
+                    withLatestFrom(hoverOverlayElements, repositoryCommitPageElements),
+                    map(([, hoverOverlayElement, repositoryCommitPageElement]) => ({
+                        hoverOverlayElement,
+                        // The root component element is guaranteed to be rendered after a componentDidUpdate
+                        relativeElement: repositoryCommitPageElement!,
+                    })),
+                    // Can't reposition HoverOverlay if it wasn't rendered
+                    filter(propertyIsDefined('hoverOverlayElement'))
+                ),
+                getHover: hoveredToken =>
+                    getHover(getLSPTextDocumentPositionParams(hoveredToken), { extensionsController }),
+                getActions: context => getHoverActions({ platformContext, extensionsController }, context),
+                pinningEnabled: true,
+            }),
+        []
+    )
+
+    // useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
+
+    const [hoverOverlayProps, setHoverOverlayProps] = useState<
+        | Pick<
+              HoverOverlayProps<HoverContext, HoverMerged, ActionItemAction>,
+              'actionsOrError' | 'hoverOrError' | 'overlayPosition' | 'hoveredToken' | 'showCloseButton'
+          >
+        | undefined
+    >(hoverifier.hoverState.hoverOverlayProps)
+
+    useEffect(() => {
+        const subscription = hoverifier.hoverStateUpdates.subscribe(update => {
+            console.log(update)
+            componentUpdates.next(update.hoverOverlayProps)
+            setHoverOverlayProps(update.hoverOverlayProps)
+        })
+        return () => subscription.unsubscribe()
+    }, [])
 
     // For errors during fetching
     const triggerError = useError()
@@ -609,7 +720,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     ></ChangesetNode>
                                 ))}
                         </div>
-                        <div className="mt-3" key="diff">
+                        <div className="mt-3" key="diff" ref={nextRepositoryCommitPageElement}>
                             {nodes && (
                                 <FileDiffTab
                                     nodes={nodes}
@@ -617,7 +728,22 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     history={history}
                                     location={location}
                                     isLightTheme={isLightTheme}
+                                    extensionInfo={{
+                                        extensionsController,
+                                        hoverifier,
+                                    }}
                                 ></FileDiffTab>
+                            )}
+                            {hoverOverlayProps && (
+                                <WebHoverOverlay
+                                    extensionsController={extensionsController}
+                                    location={location}
+                                    platformContext={platformContext}
+                                    {...hoverOverlayProps}
+                                    telemetryService={telemetryService}
+                                    hoverRef={nextOverlayElement}
+                                    onCloseButtonClick={nextCloseButtonClick}
+                                />
                             )}
                         </div>
                     </TabsWithLocalStorageViewStatePersistence>
