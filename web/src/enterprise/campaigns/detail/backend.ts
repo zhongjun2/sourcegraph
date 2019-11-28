@@ -12,7 +12,7 @@ import {
     ICampaignPlan,
     ICampaignPlanSpecification,
 } from '../../../../../shared/src/graphql/schema'
-import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
+import { DiffStatFields } from '../../../backend/diff'
 
 export type CampaignType = 'comby' | 'credentials'
 
@@ -62,13 +62,6 @@ const campaignFragment = gql`
                 }
                 diff {
                     fileDiffs {
-                        nodes {
-                            ...FileDiffFields
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
                         diffStat {
                             ...DiffStatFields
                         }
@@ -91,10 +84,6 @@ const campaignFragment = gql`
             openPending
         }
     }
-
-    ${FileDiffFields}
-
-    ${FileDiffHunkRangeFields}
 
     ${DiffStatFields}
 `
@@ -121,13 +110,6 @@ const campaignPlanFragment = gql`
                 }
                 diff {
                     fileDiffs {
-                        nodes {
-                            ...PreviewFileDiffFields
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
                         diffStat {
                             ...DiffStatFields
                         }
@@ -136,10 +118,6 @@ const campaignPlanFragment = gql`
             }
         }
     }
-
-    ${PreviewFileDiffFields}
-
-    ${FileDiffHunkRangeFields}
 
     ${DiffStatFields}
 `
@@ -294,6 +272,7 @@ export const queryChangesets = (
                                 state
                                 reviewState
                                 repository {
+                                    id
                                     name
                                     url
                                 }
@@ -301,15 +280,20 @@ export const queryChangesets = (
                                     url
                                 }
                                 createdAt
+                                head {
+                                    abbrevName
+                                    target {
+                                        oid
+                                    }
+                                }
+                                base {
+                                    abbrevName
+                                    target {
+                                        oid
+                                    }
+                                }
                                 diff {
                                     fileDiffs {
-                                        nodes {
-                                            ...FileDiffFields
-                                        }
-                                        totalCount
-                                        pageInfo {
-                                            hasNextPage
-                                        }
                                         diffStat {
                                             ...DiffStatFields
                                         }
@@ -320,10 +304,6 @@ export const queryChangesets = (
                     }
                 }
             }
-
-            ${FileDiffFields}
-
-            ${FileDiffHunkRangeFields}
 
             ${DiffStatFields}
         `,

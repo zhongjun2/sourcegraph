@@ -185,7 +185,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         []
     )
 
-    // useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
     const [hoverOverlayProps, setHoverOverlayProps] = useState<
         | Pick<
@@ -197,7 +197,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     useEffect(() => {
         const subscription = hoverifier.hoverStateUpdates.subscribe(update => {
-            console.log(update)
             componentUpdates.next(update.hoverOverlayProps)
             setHoverOverlayProps(update.hoverOverlayProps)
         })
@@ -646,6 +645,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 </>
             )}
 
+            {/* Only show a burndown chart for created campaigns */}
             {campaign && campaign.__typename === 'Campaign' && (
                 <>
                     <h3>Progress</h3>
@@ -657,9 +657,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
                 </>
             )}
-            {/* is already created or a preview is available */}
+            {/* is created or a preview is available */}
             {campaign && (
-                <>
+                <div className="position-relative" ref={nextRepositoryCommitPageElement}>
                     <TabsWithLocalStorageViewStatePersistence
                         storageKey="campaignTab"
                         className="mt-3"
@@ -690,7 +690,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         tabClassName="tab-bar__tab--h5like"
                     >
                         <div className="list-group mt-3" key="changesets">
-                            {campaign && campaign.__typename === 'Campaign' && (
+                            {campaign && (
                                 <FilteredConnection<
                                     GQL.IExternalChangeset | GQL.IChangesetPlan,
                                     Omit<ChangesetNodeProps, 'node'>
@@ -698,7 +698,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     className="mt-2"
                                     updates={changesetUpdates}
                                     nodeComponent={ChangesetNode}
-                                    nodeComponentProps={{ isLightTheme, history, location }}
+                                    nodeComponentProps={{
+                                        isLightTheme,
+                                        history,
+                                        location,
+                                        extensionInfo: { extensionsController, hoverifier },
+                                    }}
                                     queryConnection={queryChangesetsConnection}
                                     hideSearch={true}
                                     defaultFirst={15}
@@ -720,7 +725,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     ></ChangesetNode>
                                 ))}
                         </div>
-                        <div className="mt-3" key="diff" ref={nextRepositoryCommitPageElement}>
+                        <div className="mt-3" key="diff">
                             {nodes && (
                                 <FileDiffTab
                                     nodes={nodes}
@@ -734,20 +739,20 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     }}
                                 ></FileDiffTab>
                             )}
-                            {hoverOverlayProps && (
-                                <WebHoverOverlay
-                                    extensionsController={extensionsController}
-                                    location={location}
-                                    platformContext={platformContext}
-                                    {...hoverOverlayProps}
-                                    telemetryService={telemetryService}
-                                    hoverRef={nextOverlayElement}
-                                    onCloseButtonClick={nextCloseButtonClick}
-                                />
-                            )}
                         </div>
                     </TabsWithLocalStorageViewStatePersistence>
-                </>
+                    {hoverOverlayProps && (
+                        <WebHoverOverlay
+                            extensionsController={extensionsController}
+                            location={location}
+                            platformContext={platformContext}
+                            {...hoverOverlayProps}
+                            telemetryService={telemetryService}
+                            hoverRef={nextOverlayElement}
+                            onCloseButtonClick={nextCloseButtonClick}
+                        />
+                    )}
+                </div>
             )}
         </>
     )
