@@ -9,7 +9,7 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevSpec, FileSpec, ResolvedRevSpec } from '../../../../../shared/src/util/url'
 import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { ExternalChangesetDiffConnection } from './ExternalChangesetDiffConnection'
+import { ChangesetDiffConnection } from './ChangesetDiffConnection'
 
 interface Props extends ThemeProps {
     nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[]
@@ -36,13 +36,13 @@ export const FileDiffTab: React.FunctionComponent<Props> = ({
                             <SourcePullIcon className="icon-inline mr-2" />{' '}
                             <LinkOrSpan to={changesetNode.repository.url}>{changesetNode.repository.name}</LinkOrSpan>
                         </h3>
-                        <ExternalChangesetDiffConnection
+                        <ChangesetDiffConnection
                             node={changesetNode}
                             isLightTheme={isLightTheme}
                             extensionInfo={extensionInfo}
                             location={location}
                             history={history}
-                        ></ExternalChangesetDiffConnection>
+                        ></ChangesetDiffConnection>
                     </div>
                 )
         )}

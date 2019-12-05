@@ -16,7 +16,7 @@ import { FileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../.
 import { map } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 
-export interface ExternalChangesetDiffConnectionProps extends ThemeProps {
+export interface ChangesetDiffConnectionProps extends ThemeProps {
     node: GQL.IExternalChangeset | GQL.IChangesetPlan
     history: H.History
     location: H.Location
@@ -25,19 +25,21 @@ export interface ExternalChangesetDiffConnectionProps extends ThemeProps {
     } & ExtensionsControllerProps
 }
 
-export const ExternalChangesetDiffConnection: React.FunctionComponent<ExternalChangesetDiffConnectionProps> = ({
+export const ChangesetDiffConnection: React.FunctionComponent<ChangesetDiffConnectionProps> = ({
     node,
     isLightTheme,
     history,
     location,
     extensionInfo,
 }) => {
-    const queryExternalChangesetFileDiffs = useMemo(
+    const queryChangesetFileDiffs = useMemo(
         () =>
-            function queryExternalChangesetFileDiffs(args: { first?: number }): Observable<GQL.IFileDiffConnection> {
+            function queryChangesetFileDiffs(args: {
+                first?: number
+            }): Observable<GQL.IFileDiffConnection | GQL.IPreviewFileDiffConnection> {
                 return queryGraphQL(
                     gql`
-                        query ExternalChangesets($changeset: ID!, $first: Int) {
+                        query ChangesetDiffs($changeset: ID!, $first: Int) {
                             node(id: $changeset) {
                                 __typename
                                 ... on ExternalChangeset {
@@ -65,13 +67,13 @@ export const ExternalChangesetDiffConnection: React.FunctionComponent<ExternalCh
 
                         ${DiffStatFields}
                     `,
-                    { ...args, changeset: (node as GQL.IExternalChangeset).id }
+                    { ...args, changeset: node.id }
                 ).pipe(
                     map(({ data, errors }) => {
                         if (!data || !data.node) {
                             throw createAggregateError(errors)
                         }
-                        const repo = data.node as GQL.IExternalChangeset
+                        const repo = data.node as GQL.IExternalChangeset | GQL.IChangesetPlan
                         if (!repo.diff || !repo.diff.fileDiffs || errors) {
                             throw createAggregateError(errors)
                         }
@@ -79,7 +81,7 @@ export const ExternalChangesetDiffConnection: React.FunctionComponent<ExternalCh
                     })
                 )
             },
-        []
+        [node.id]
     )
     const augmentedExtensionInfo = useMemo(
         () =>
@@ -100,13 +102,13 @@ export const ExternalChangesetDiffConnection: React.FunctionComponent<ExternalCh
                       },
                   }
                 : undefined,
-        []
+        [node, extensionInfo]
     )
     return (
         <FileDiffConnection
             noun="changed file"
             pluralNoun="changed files"
-            queryConnection={queryExternalChangesetFileDiffs}
+            queryConnection={queryChangesetFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
                 isLightTheme,

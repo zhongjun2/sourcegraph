@@ -20,6 +20,7 @@ import {
     previewCampaignPlan,
     fetchCampaignPlanById,
     CampaignType,
+    queryChangesetPlans,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -265,8 +266,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }, [campaignID, triggerError, changesetUpdates])
 
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
-        [campaignID]
+        (args: FilteredConnectionQueryArgs) =>
+            campaign && campaign.__typename === 'CampaignPlan'
+                ? queryChangesetPlans(campaign.id, args)
+                : queryChangesets(campaignID!, args),
+        [campaign, campaignID]
     )
 
     const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting'>(campaignID ? 'viewing' : 'editing')
@@ -437,6 +441,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         : null
 
     const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
+
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded =
         !currentSpec ||
@@ -657,6 +662,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
                 </>
             )}
+
             {/* is created or a preview is available */}
             {campaign && (
                 <div className="position-relative" ref={nextRepositoryCommitPageElement}>
@@ -690,54 +696,43 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         tabClassName="tab-bar__tab--h5like"
                     >
                         <div className="list-group mt-3" key="changesets">
-                            {campaign && (
-                                <FilteredConnection<
-                                    GQL.IExternalChangeset | GQL.IChangesetPlan,
-                                    Omit<ChangesetNodeProps, 'node'>
-                                >
-                                    className="mt-2"
-                                    updates={changesetUpdates}
-                                    nodeComponent={ChangesetNode}
-                                    nodeComponentProps={{
-                                        isLightTheme,
-                                        history,
-                                        location,
-                                        extensionInfo: { extensionsController, hoverifier },
-                                    }}
-                                    queryConnection={queryChangesetsConnection}
-                                    hideSearch={true}
-                                    defaultFirst={15}
-                                    noun="Changeset"
-                                    pluralNoun="Changesets"
-                                    history={history}
-                                    location={location}
-                                />
-                            )}
-                            {campaign &&
-                                campaign.__typename === 'CampaignPlan' &&
-                                campaign.changesets.nodes.map((changeset, i) => (
-                                    <ChangesetNode
-                                        node={changeset}
-                                        isLightTheme={isLightTheme}
-                                        key={i}
-                                        location={location}
-                                        history={history}
-                                    ></ChangesetNode>
-                                ))}
+                            <FilteredConnection<
+                                GQL.IExternalChangeset | GQL.IChangesetPlan,
+                                Omit<ChangesetNodeProps, 'node'>
+                            >
+                                className="mt-2"
+                                updates={changesetUpdates}
+                                nodeComponent={ChangesetNode}
+                                nodeComponentProps={{
+                                    isLightTheme,
+                                    history,
+                                    location,
+                                    extensionInfo:
+                                        campaign.__typename === 'Campaign'
+                                            ? { extensionsController, hoverifier }
+                                            : undefined,
+                                }}
+                                queryConnection={queryChangesetsConnection}
+                                hideSearch={true}
+                                defaultFirst={15}
+                                noun="Changeset"
+                                pluralNoun="Changesets"
+                                history={history}
+                                location={location}
+                            />
                         </div>
                         <div className="mt-3" key="diff">
-                            {nodes && (
-                                <FileDiffTab
-                                    nodes={nodes}
-                                    history={history}
-                                    location={location}
-                                    isLightTheme={isLightTheme}
-                                    extensionInfo={{
-                                        extensionsController,
-                                        hoverifier,
-                                    }}
-                                ></FileDiffTab>
-                            )}
+                            <FileDiffTab
+                                /* nodes is always set when campaign is set */
+                                nodes={nodes!}
+                                history={history}
+                                location={location}
+                                isLightTheme={isLightTheme}
+                                extensionInfo={{
+                                    extensionsController,
+                                    hoverifier,
+                                }}
+                            ></FileDiffTab>
                         </div>
                     </TabsWithLocalStorageViewStatePersistence>
                     {hoverOverlayProps && (

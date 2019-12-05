@@ -11,6 +11,7 @@ import {
     IChangesetsOnCampaignArguments,
     ICampaignPlan,
     ICampaignPlanSpecification,
+    IChangesetPlanConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields } from '../../../backend/diff'
 
@@ -103,6 +104,7 @@ const campaignPlanFragment = gql`
         changesets {
             totalCount
             nodes {
+                id
                 __typename
                 repository {
                     id
@@ -317,6 +319,55 @@ export const queryChangesets = (
             }
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesets
+        })
+    )
+
+export const queryChangesetPlans = (
+    campaignPlan: ID,
+    { first }: IChangesetsOnCampaignArguments
+): Observable<IChangesetPlanConnection> =>
+    queryGraphQL(
+        gql`
+            query CampaignChangesetPlans($campaignPlan: ID!, $first: Int) {
+                node(id: $campaignPlan) {
+                    __typename
+                    ... on CampaignPlan {
+                        changesets(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                repository {
+                                    id
+                                    name
+                                    url
+                                }
+                                diff {
+                                    fileDiffs {
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${DiffStatFields}
+        `,
+        { campaignPlan, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`CampaignPlan with ID ${campaignPlan} does not exist`)
+            }
+            if (node.__typename !== 'CampaignPlan') {
+                throw new Error(`The given ID is a ${node.__typename}, not a CampaignPlan`)
             }
             return node.changesets
         })

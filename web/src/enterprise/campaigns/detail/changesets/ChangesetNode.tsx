@@ -18,7 +18,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import { RepoSpec, RevSpec, FileSpec, ResolvedRevSpec } from '../../../../../../shared/src/util/url'
 import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
-import { ExternalChangesetDiffConnection } from '../ExternalChangesetDiffConnection'
+import { ChangesetDiffConnection } from '../ChangesetDiffConnection'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: GQL.IExternalChangeset | GQL.IChangesetPlan
@@ -103,13 +103,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 }
                 wholeTitleClickable={false}
             >
-                <ExternalChangesetDiffConnection
+                <ChangesetDiffConnection
                     node={node}
                     isLightTheme={isLightTheme}
                     history={history}
                     location={location}
                     extensionInfo={extensionInfo}
-                ></ExternalChangesetDiffConnection>
+                ></ChangesetDiffConnection>
             </Collapsible>
         </li>
     )
