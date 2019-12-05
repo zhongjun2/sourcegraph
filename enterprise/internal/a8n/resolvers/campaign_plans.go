@@ -64,6 +64,17 @@ func (r *campaignPlanResolver) Changesets(
 	}
 }
 
+const campaignJobIDKind = "ChangesetPlan"
+
+func marshalCampaignJobID(id int64) graphql.ID {
+	return relay.MarshalID(campaignJobIDKind, id)
+}
+
+func unmarshalCampaignJobID(id graphql.ID) (campaignJobID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignJobID)
+	return
+}
+
 type campaignJobsConnectionResolver struct {
 	store        *ee.Store
 	campaignPlan *a8n.CampaignPlan
@@ -176,6 +187,10 @@ func (r *campaignJobResolver) BaseRepository(ctx context.Context) (*graphqlbacke
 
 func (r *campaignJobResolver) Diff() graphqlbackend.ChangesetPlanResolver {
 	return r
+}
+
+func (r *campaignJobResolver) ID() graphql.ID {
+	return marshalCampaignJobID(r.job.ID)
 }
 
 func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.PreviewFileDiffConnection, error) {

@@ -54,6 +54,26 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return &changesetResolver{store: r.store, Changeset: changeset}, nil
 }
 
+func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
+	// 🚨 SECURITY: Only site admins may access changesets for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	changesetPlanID, err := unmarshalCampaignJobID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	changesetPlan, err := r.store.GetCampaignJob(ctx, ee.GetCampaignJobOpts{ID: changesetPlanID})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignJobResolver{job: changesetPlan}, nil
+}
+
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
 	// 🚨 SECURITY: Only site admins may access campaigns for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {

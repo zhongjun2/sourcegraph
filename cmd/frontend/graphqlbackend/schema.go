@@ -612,6 +612,7 @@ input CreateChangesetInput {
 
 # Preview of a changeset planned to be created.
 type ChangesetPlan {
+    id: ID!
     # The repository changed by the changeset.
     repository: Repository!
 

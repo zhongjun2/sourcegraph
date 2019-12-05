@@ -73,6 +73,7 @@ type A8NResolver interface {
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
+	ChangesetPlanByID(ctx context.Context, id graphql.ID) (ChangesetPlanResolver, error)
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error)
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
@@ -211,6 +212,7 @@ type ChangesetPlansConnectionResolver interface {
 }
 
 type ChangesetPlanResolver interface {
+	ID() graphql.ID
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() ChangesetPlanResolver
