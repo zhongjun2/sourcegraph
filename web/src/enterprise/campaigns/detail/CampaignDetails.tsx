@@ -729,7 +729,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {nodes && (
                                 <FileDiffTab
                                     nodes={nodes}
-                                    persistLines={campaign.__typename === 'Campaign'}
                                     history={history}
                                     location={location}
                                     isLightTheme={isLightTheme}
