@@ -653,7 +653,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         changesetCountsOverTime={campaign.changesetCountsOverTime}
                         history={history}
                     />
-                    {/* only campaigns that have no plan can add changesets manually */}
+                    {/* only campaigns that have no plan (ie. manual) can add changesets manually */}
                     {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
                 </>
             )}
