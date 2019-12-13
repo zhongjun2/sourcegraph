@@ -686,10 +686,8 @@ type getPatternInfoOptions struct {
 func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
 	var patternsToCombine []string
 	isRegExp := false
-	isStructuralPat := false
 	var pattern search.PatternKind
 	if opts != nil && opts.performStructuralSearch {
-		isStructuralPat = true
 		for _, v := range r.query.Values(query.FieldDefault) {
 			var pattern string
 			switch {
@@ -756,7 +754,6 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 
 	patternInfo := &search.PatternInfo{
 		IsRegExp:                     isRegExp,
-		IsStructuralPat:              isStructuralPat,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
 		FileMatchLimit:               r.maxResults(),
 		Pattern:                      pattern,
