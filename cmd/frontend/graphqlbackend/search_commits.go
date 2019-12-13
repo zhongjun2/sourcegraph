@@ -85,13 +85,29 @@ func (r *commitSearchResultResolver) resultCount() int32 {
 
 var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
+// A convenience function that gates patterns to only be valid for Regexp or Literal search.
+func patternForSearchKind(info *search.PatternInfo) string {
+	var pattern string
+	switch r := (info.Pattern).(type) {
+	case search.Regexp:
+		pattern = string(r)
+	case search.Literal:
+		pattern = string(r)
+	case search.Structural:
+		panic("structural pattern is not applicable for commit diff search")
+	default:
+		panic("unreachable")
+	}
+	return pattern
+}
+
 func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
 
 	textSearchOptions := git.TextSearchOptions{
-		Pattern:         info.Pattern,
+		Pattern:         patternForSearchKind(info),
 		IsRegExp:        info.IsRegExp,
 		IsCaseSensitive: info.IsCaseSensitive,
 	}
@@ -112,8 +128,9 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevis
 	}
 
 	var terms []string
-	if info.Pattern != "" {
-		terms = append(terms, info.Pattern)
+	pattern := patternForSearchKind(info)
+	if pattern != "" {
+		terms = append(terms, pattern)
 	}
 	return searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:           repoRevs,

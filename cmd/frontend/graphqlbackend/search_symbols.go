@@ -60,7 +60,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 		tr.Finish()
 	}()
 
-	if args.Pattern.Pattern == "" {
+	if patternForSearchKind(args.Pattern) == "" {
 		return nil, nil, nil
 	}
 
@@ -274,7 +274,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
-		Query:           patternInfo.Pattern,
+		Query:           patternForSearchKind(patternInfo),
 		IsCaseSensitive: patternInfo.IsCaseSensitive,
 		IsRegExp:        patternInfo.IsRegExp,
 		IncludePatterns: patternInfo.IncludePatterns,

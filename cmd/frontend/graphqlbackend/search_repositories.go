@@ -45,7 +45,8 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 		}
 	}
 
-	pattern, err := regexp.Compile(args.Pattern.Pattern)
+	validPattern := patternForSearchKind(args.Pattern)
+	pattern, err := regexp.Compile(validPattern)
 	if err != nil {
 		return nil, nil, err
 	}

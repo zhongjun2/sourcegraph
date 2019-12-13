@@ -484,25 +484,33 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 
 	var q zoektquery.Q
 	var err error
-	if query.IsRegExp {
+
+	var pattern string
+	switch r := (query.Pattern).(type) {
+	case search.Regexp:
+		pattern = string(r)
 		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
-		q, err = parseRe(query.Pattern, fileNameOnly, query.IsCaseSensitive)
+		q, err = parseRe(pattern, fileNameOnly, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
-	} else if query.IsStructuralPat {
-		q, err = StructuralPatToQuery(query.Pattern)
-		if err != nil {
-			return nil, err
-		}
-	} else {
+	case search.Literal:
+		pattern = string(r)
 		q = &zoektquery.Substring{
-			Pattern:       query.Pattern,
+			Pattern:       pattern,
 			CaseSensitive: query.IsCaseSensitive,
 
 			FileName: true,
 			Content:  true,
 		}
+	case search.Structural:
+		pattern = string(r.MatchTemplate)
+		q, err = StructuralPatToQuery(pattern)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		panic("unreachable")
 	}
 
 	if isSymbol {

@@ -687,6 +687,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 	var patternsToCombine []string
 	isRegExp := false
 	isStructuralPat := false
+	var pattern search.PatternKind
 	if opts != nil && opts.performStructuralSearch {
 		isStructuralPat = true
 		for _, v := range r.query.Values(query.FieldDefault) {
@@ -703,22 +704,26 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 			patternsToCombine = append(patternsToCombine, pattern)
 		}
 		p := strings.Join(patternsToCombine, " ")
-		patternsToCombine = []string{p}
+		pattern = search.Structural(search.StructuralPattern{
+			MatchTemplate: p,
+			Rule:          "",
+		})
 	} else if opts == nil || !opts.forceFileSearch {
 		isRegExp = true
 		for _, v := range r.query.Values(query.FieldDefault) {
 			// Treat quoted strings as literal strings to match, not regexps.
-			var pattern string
+			var rawPattern string
 			switch {
 			case v.String != nil:
-				pattern = regexp.QuoteMeta(*v.String)
+				rawPattern = regexp.QuoteMeta(*v.String)
 			case v.Regexp != nil:
-				pattern = v.Regexp.String()
+				rawPattern = v.Regexp.String()
 			}
-			if pattern == "" {
+			if rawPattern == "" {
 				continue
 			}
-			patternsToCombine = append(patternsToCombine, pattern)
+			patternsToCombine = append(patternsToCombine, rawPattern)
+			pattern = search.Regexp(search.StringPattern(regexpPatternMatchingExprsInOrder(patternsToCombine)))
 		}
 	} else {
 		// TODO: We must have some pattern that always matches here, or else
@@ -728,6 +733,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		// indexed search @keegan? This workaround is OK for now though.
 		isRegExp = true
 		patternsToCombine = append(patternsToCombine, ".")
+		pattern = search.Regexp(search.StringPattern(regexpPatternMatchingExprsInOrder(patternsToCombine)))
 	}
 
 	// Handle file: and -file: filters.
@@ -753,7 +759,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		IsStructuralPat:              isStructuralPat,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
 		FileMatchLimit:               r.maxResults(),
-		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
+		Pattern:                      pattern,
 		IncludePatterns:              includePatterns,
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
