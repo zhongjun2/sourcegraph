@@ -190,7 +190,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"Repo":            []string{string(repo.Name)},
 		"URL":             []string{repo.URL},
 		"Commit":          []string{string(commit)},
-		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
@@ -203,12 +202,19 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		q.Set("Deadline", string(t))
 	}
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
-	if p.IsRegExp {
-		q.Set("IsRegExp", "true")
+
+	switch r := (p.Pattern).(type) {
+	case search.Regexp:
+		q.Set("Pattern", string(r))
+	case search.Literal:
+		q.Set("Pattern", string(r))
+	case search.Structural:
+		q.Set("MatchTemplate", string(r.MatchTemplate))
+		q.Set("Rule", string(r.Rule))
+	default:
+		panic("unreachable")
 	}
-	if p.IsStructuralPat {
-		q.Set("IsStructuralPat", "true")
-	}
+
 	if p.IsWordMatch {
 		q.Set("IsWordMatch", "true")
 	}
