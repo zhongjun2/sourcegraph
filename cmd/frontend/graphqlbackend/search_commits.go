@@ -106,9 +106,20 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRev
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
 
+	var isRegExp bool
+	switch r := (info.Pattern).(type) {
+	case search.Regexp:
+		isRegExp = true
+	case search.Literal:
+	case search.Structural:
+		isRegExp = false
+	default:
+		panic("unreachable")
+	}
+
 	textSearchOptions := git.TextSearchOptions{
 		Pattern:         patternForSearchKind(info),
-		IsRegExp:        info.IsRegExp,
+		IsRegExp:        isRegExp,
 		IsCaseSensitive: info.IsCaseSensitive,
 	}
 	return searchCommitsInRepo(ctx, commitSearchOp{
@@ -171,7 +182,19 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			"--unified=0",
 		)
 	}
-	if op.info.IsRegExp {
+
+	var isRegExp bool
+	switch r := (op.info.Pattern).(type) {
+	case search.Regexp:
+		isRegExp = true
+	case search.Literal:
+	case search.Structural:
+		isRegExp = false
+	default:
+		panic("unreachable")
+	}
+
+	if isRegExp {
 		args = append(args, "--extended-regexp")
 	}
 	if !op.query.IsCaseSensitive() {

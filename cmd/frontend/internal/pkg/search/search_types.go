@@ -29,8 +29,6 @@ func (s Structural) Value() {}
 // sync with pkg/searcher/protocol.PatternInfo.
 type PatternInfo struct {
 	Pattern         PatternKind
-	IsRegExp        bool
-	IsStructuralPat bool
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
