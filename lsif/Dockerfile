@@ -1,6 +1,7 @@
 FROM alpine:3.11@sha256:3983cc12fb9dc20a009340149e382a18de6a8261b0ac0e8f5fcdf11f8dd5937e AS builder
 
-RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.16.3-r0
+# hadolint ignore=DL3018
+RUN apk add --no-cache nodejs-current npm
 RUN npm install -g yarn@1.17.3
 
 COPY package.json tsconfig.json yarn.lock /lsif/
@@ -24,7 +25,7 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 ENV PGDATABASE=sg PGHOST=pgsql PGPORT=5432 PGSSLMODE=disable PGUSER=sg
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache tini supervisor=3.3.5-r0 nodejs-current=12.4.0-r0
+RUN apk add --no-cache tini supervisor nodejs-current
 
 COPY --from=builder /lsif /lsif
 COPY supervisord.conf /supervisord.conf
