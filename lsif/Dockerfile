@@ -1,7 +1,7 @@
 FROM alpine:3.11@sha256:3983cc12fb9dc20a009340149e382a18de6a8261b0ac0e8f5fcdf11f8dd5937e AS builder
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache nodejs-current npm
+RUN apk add --no-cache nodejs-current nodejs-npm
 RUN npm install -g yarn@1.17.3
 
 COPY package.json tsconfig.json yarn.lock /lsif/
