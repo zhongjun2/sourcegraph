@@ -21,7 +21,7 @@ import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { enterpriseRepoContainerRoutes, enterpriseRepoRevContainerRoutes } from './repo/routes'
 import { enterpriseRoutes } from './routes'
-import { enterpriseSiteAdminOverviewComponents } from './site-admin/overviewComponents'
+import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
 import { enterpriseSiteAdminSidebarGroups } from './site-admin/sidebaritems'
 import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
@@ -31,6 +31,7 @@ import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems
 import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarItems } from './repo/settings/sidebaritems'
+import './components/licenseActions/LicenseActionButton' // contributes
 
 window.addEventListener('DOMContentLoaded', () => {
     render(
