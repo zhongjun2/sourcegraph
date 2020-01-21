@@ -110,9 +110,9 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 	}
 
 	return &lsifQueryResolver{
-		repoID: args.Repository.Type().ID,
-		commit: args.Commit,
-		path:   args.Path,
-		upload: upload,
+		repositoryResolver: args.Repository,
+		commit:             args.Commit,
+		path:               args.Path,
+		upload:             upload,
 	}, nil
 }
