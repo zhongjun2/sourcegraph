@@ -159,7 +159,7 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
-        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
+        const ListComponent = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
 
@@ -284,7 +284,7 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
      *
      * In most cases, it's simpler to use updateOnChange.
      */
-    updates?: Observable<void>
+    updates?: Observable<{ forceRefresh: boolean } | undefined>
 
     /**
      * Refresh the data when this value changes. It is typically constructed as a key from the query args.
@@ -630,7 +630,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.updates) {
             this.subscriptions.add(
                 this.props.updates.subscribe(c => {
-                    this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
+                    this.setState({ loading: true }, () =>
+                        refreshRequests.next({ forceRefresh: c ?c.forceRefresh : true })
+                    )
                 })
             )
         }

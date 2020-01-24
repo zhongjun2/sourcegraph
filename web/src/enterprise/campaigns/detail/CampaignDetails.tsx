@@ -84,7 +84,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const triggerError = useError()
 
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
-    const changesetUpdates = useMemo(() => new Subject<void>(), [])
+    const changesetUpdates = useMemo(() => new Subject<{ forceRefresh: boolean } | undefined>(), [])
 
     // Fetch campaign if ID was given
     const [campaign, setCampaign] = useState<GQL.ICampaign | GQL.ICampaignPlan | null>()
@@ -127,7 +127,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         type: (fetchedCampaign?.plan?.type as CampaignType) ?? MANUAL_CAMPAIGN_TYPE,
                         arguments: fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null,
                     })
-                    changesetUpdates.next()
+                    changesetUpdates.next({ forceRefresh: false })
                 },
                 error: triggerError,
             })
@@ -195,7 +195,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     tap(campaign => {
                         setCampaign(campaign)
                         if (campaign && campaign.changesets.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
-                            changesetUpdates.next()
+                            changesetUpdates.next({ forceRefresh: false })
                         }
                     })
                 ),
@@ -361,7 +361,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onAddChangeset = (): void => {
         // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
         campaignUpdates.next()
-        changesetUpdates.next()
+        changesetUpdates.next({ forceRefresh: false })
     }
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser

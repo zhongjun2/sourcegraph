@@ -114,7 +114,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                 </button>
                 {isLoading && <LoadingSpinner className="icon-inline" />}
             </Form>
-            {error && <ErrorAlert error={error} />}
+            {error && <ErrorAlert error={error} className="mt-3" />}
         </>
     )
 }
