@@ -181,13 +181,21 @@ func detectSearchType(version string, patternType *string, input string) (Search
 }
 
 func asString(v *searchquerytypes.Value) string {
+	if v == nil {
+		log15.Info("nil", "x", "y")
+		return ""
+	}
 	switch {
 	case v.String != nil:
 		return *v.String
 	case v.Regexp != nil:
 		return v.Regexp.String()
+	case v.Bool != nil:
+		log15.Info("boolean", "x", "y")
+		return "boolean"
 	default:
-		panic("unable to get value as string")
+		log15.Info("none", "q", "z")
+		return "unable to get value as string"
 	}
 }
 

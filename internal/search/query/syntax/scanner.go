@@ -18,10 +18,10 @@ const (
 	TokenError
 	TokenLiteral
 	TokenQuoted
-	TokenPattern
+	TokenPattern // A token delimited by /.../ denoting a regexp pattern.
 	TokenColon
 	TokenMinus
-	TokenSep // separator (like a semicolon)
+	TokenSep // Whitespace separator.
 )
 
 var singleCharTokens = map[rune]TokenType{
@@ -129,9 +129,12 @@ func scanText(s *scanner) stateFn {
 	preColonChars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	escaped := false
+	// keep looping through a string like asd.kj. If you encounter anything that is not preColonChars, go and scan literal and stop this loop.
+	// If you don't, keep looping. If you see a :, then emit that as field:value. If you see a space, then scan a pattern.
 	for {
 		if s.eof() {
-			break
+			s.emit(TokenLiteral)
+			return scanDefault
 		}
 		r := s.next()
 		if !escaped {
@@ -142,7 +145,8 @@ func scanText(s *scanner) stateFn {
 
 			if unicode.IsSpace(r) {
 				s.backup()
-				break
+				s.emit(TokenLiteral)
+				return scanDefault
 			}
 		}
 		escaped = false
@@ -159,8 +163,6 @@ func scanText(s *scanner) stateFn {
 		}
 	}
 
-	s.emit(TokenLiteral)
-	return scanDefault
 }
 
 func scanValue(s *scanner) stateFn {
