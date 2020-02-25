@@ -1,4 +1,4 @@
-package types
+package query
 
 import (
 	"errors"
@@ -9,6 +9,41 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+)
+
+type Field string
+type FieldAlias string
+
+// All field names and aliases
+const (
+	FieldDefault            Field = ""
+	FieldCase               Field = "case"
+	FieldRepo               Field = "repo"
+	FieldRepoGroup          Field = "repogroup"
+	FieldFile               Field = "file"
+	FieldFork               Field = "fork"
+	FieldArchived           Field = "archived"
+	FieldLang               Field = "lang"
+	FieldTyp                Field = "type"
+	FieldRepoHasFile        Field = "repohasfile"
+	FieldRepoHasCommitAfter Field = "repohascommitafter"
+	FieldPatternType        Field = "patterntype"
+	FieldContent            Field = "content"
+
+	// For diff and commit search only:
+	FieldBefore    Field = "before"
+	FieldAfter     Field = "after"
+	FieldAuthor    Field = "author"
+	FieldCommitter Field = "committer"
+	FieldMessage   Field = "message"
+
+	// Temporary experimental fields:
+	FieldIndex     Field = "index"
+	FieldCount     Field = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
+	FieldMax       Field = "max"   // Deprecated alias for count
+	FieldTimeout   Field = "timeout"
+	FieldReplace   Field = "replace"
+	FieldCombyRule Field = "rule"
 )
 
 // TypeError describes an error in query typechecking.
@@ -23,8 +58,8 @@ func (e *TypeError) Error() string {
 
 // Config specifies configuration for parsing a query.
 type Config struct {
-	FieldTypes   map[string]FieldType // map of recognized field name (excluding aliases) -> type
-	FieldAliases map[string]string    // map of field alias -> field name
+	FieldTypes   map[Field]FieldType // map of recognized field name (excluding aliases) -> type
+	FieldAliases map[string]Field    // map of field alias -> field name
 }
 
 // FieldType describes the type of a query field.
@@ -55,15 +90,17 @@ func (c *Config) Check(parseTree syntax.ParseTree) (*Fields, error) {
 	return &checkedQuery, nil
 }
 
-func (c *Config) resolveField(field string, not bool) (resolvedField string, typ FieldType, err error) {
+func (c *Config) resolveField(field string, not bool) (resolvedField Field, typ FieldType, err error) {
+
 	// Resolve field alias, if any.
-	if resolvedField, ok := c.FieldAliases[field]; ok {
-		field = resolvedField
+	resolvedField, alias := c.FieldAliases[field]
+	if !alias {
+		resolvedField = Field(field)
 	}
 
 	// Check that field is recognized.
 	var ok bool
-	typ, ok = c.FieldTypes[field]
+	typ, ok = c.FieldTypes[resolvedField]
 	if !ok {
 		err = fmt.Errorf("unrecognized field %q", field)
 		return
@@ -80,10 +117,10 @@ func (c *Config) resolveField(field string, not bool) (resolvedField string, typ
 		}
 		return
 	}
-	return field, typ, nil
+	return Field(field), typ, nil
 }
 
-func (c *Config) checkExpr(expr *syntax.Expr) (field string, fieldType FieldType, value *Value, err error) {
+func (c *Config) checkExpr(expr *syntax.Expr) (field Field, fieldType FieldType, value *Value, err error) {
 	// Resolve field name.
 	resolvedField, fieldType, err := c.resolveField(expr.Field, expr.Not)
 	if err != nil {

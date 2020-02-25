@@ -5,13 +5,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 func TestQuery_IsCaseSensitive(t *testing.T) {
-	conf := types.Config{
-		FieldTypes: map[string]types.FieldType{
-			FieldCase: {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+	conf := Config{
+		FieldTypes: map[Field]FieldType{
+			FieldCase: {Literal: BoolType, Quoted: BoolType, Singular: true},
 		},
 	}
 
@@ -47,10 +46,10 @@ func TestQuery_IsCaseSensitive(t *testing.T) {
 }
 
 func TestQuery_RegexpPatterns(t *testing.T) {
-	conf := types.Config{
-		FieldTypes: map[string]types.FieldType{
+	conf := Config{
+		FieldTypes: map[Field]FieldType{
 			"r": regexpNegatableFieldType,
-			"s": {Literal: types.RegexpType, Quoted: types.StringType},
+			"s": {Literal: RegexpType, Quoted: StringType},
 		},
 	}
 
@@ -90,10 +89,10 @@ func TestQuery_RegexpPatterns(t *testing.T) {
 }
 
 func TestQuery_StringValues(t *testing.T) {
-	conf := types.Config{
-		FieldTypes: map[string]types.FieldType{
-			"s": {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
-			"r": {Literal: types.RegexpType, Quoted: types.StringType},
+	conf := Config{
+		FieldTypes: map[Field]FieldType{
+			"s": {Literal: StringType, Quoted: StringType, Negatable: true},
+			"r": {Literal: RegexpType, Quoted: StringType},
 		},
 	}
 

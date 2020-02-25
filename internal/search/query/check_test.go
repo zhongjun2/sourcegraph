@@ -1,4 +1,4 @@
-package types
+package query
 
 import (
 	"errors"
@@ -19,8 +19,8 @@ type value struct {
 
 func TestCheck(t *testing.T) {
 	toValue := func(v *Value) value { return value{Not: v.Not(), Value: v.Value()} }
-	toTestValueMap := func(fields map[string][]*Value) map[string][]value {
-		m := make(map[string][]value, len(fields))
+	toTestValueMap := func(fields map[Field][]*Value) map[Field][]value {
+		m := make(map[Field][]value, len(fields))
 		for f, vs := range fields {
 			m[f] = make([]value, len(vs))
 			for i, v := range vs {
@@ -31,7 +31,7 @@ func TestCheck(t *testing.T) {
 	}
 
 	conf := Config{
-		FieldTypes: map[string]FieldType{
+		FieldTypes: map[Field]FieldType{
 			"": {
 				Literal: RegexpType,
 				Quoted:  StringType,
@@ -47,7 +47,7 @@ func TestCheck(t *testing.T) {
 				Singular: true,
 			},
 		},
-		FieldAliases: map[string]string{
+		FieldAliases: map[string]Field{
 			"f":  "",
 			"r2": "r",
 		},

@@ -1,4 +1,4 @@
-package types
+package query
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 )
 
 // Map of field name -> values
-type Fields map[string][]*Value
+type Fields map[Field][]*Value
 
 func (f *Fields) String() string {
 	fields := []string{}
