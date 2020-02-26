@@ -10,8 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"gopkg.in/inconshreveable/log15.v2"
+	"time"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -34,6 +33,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
@@ -107,6 +108,10 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	} else if args.After != nil {
 		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
+
+	log15.Warn("Going to sleep for 65 seconds!")
+	time.Sleep(65 * time.Second)
+	log15.Warn("Finished sleeping")
 
 	return &searchResolver{
 		query:         q,
