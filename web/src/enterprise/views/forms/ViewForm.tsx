@@ -2,6 +2,8 @@ import React, { useCallback, useState } from 'react'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import Form, { ISubmitEvent, IChangeEvent, Field } from 'react-jsonschema-form'
 import { FormContribution } from '../../../../../shared/src/api/protocol'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 
 interface Props extends ExtensionsControllerProps<'services'> {
     form: FormContribution
@@ -10,18 +12,22 @@ interface Props extends ExtensionsControllerProps<'services'> {
 type FormData = object
 
 const FIELDS: { [name: string]: Field } = {
-    DescriptionField: ({ id, description }) => (
-        <small id={id} className="form-text mt-0 mb-1 text-muted">
-            {description}
-        </small>
-    ),
+    DescriptionField: ({ description }) =>
+        description ? (
+            <Markdown
+                className="form-text small mt-0 mb-1 text-muted"
+                dangerousInnerHTML={renderMarkdown(description)}
+            />
+        ) : (
+            <span />
+        ),
 }
 
 /**
  * A form that is displayed in a view (contributed by an extension).
  */
 export const ViewForm: React.FunctionComponent<Props> = ({ form, extensionsController }) => {
-    const [formData, setFormData] = useState<FormData|undefined>()
+    const [formData, setFormData] = useState<FormData | undefined>()
 
     const onFormChange = useCallback(
         (e: IChangeEvent<FormData>) => {

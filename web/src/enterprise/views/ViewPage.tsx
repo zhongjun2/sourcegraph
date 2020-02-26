@@ -25,11 +25,14 @@ export const ViewPage: React.FunctionComponent<Props> = ({ viewID, extensionsCon
         return null
     }
     if (data === null) {
-        return (
-            <div className="alert alert-danger">
-                View not found: <code>{viewID}</code>
-            </div>
-        )
+        return null
+        // TODO!(sqs): avoid flicker
+        //
+        // return (
+        //     <div className="alert alert-danger">
+        //         View not found: <code>{viewID}</code>
+        //     </div>
+        // )
     }
 
     const { view, form, panelViews } = data
@@ -43,14 +46,16 @@ export const ViewPage: React.FunctionComponent<Props> = ({ viewID, extensionsCon
             ) : (
                 <ViewForm form={form} extensionsController={extensionsController} />
             )}
-            {panelViews?.map(panelView => (
-                <section key={panelView.id} className="card mt-3">
-                    {panelView.title !== '' && <h3 className="card-header">{panelView.title}</h3>}
-                    {panelView.content && (
-                        <Markdown className="card-body" dangerousInnerHTML={renderMarkdown(panelView.content)} />
-                    )}
-                </section>
-            ))}
+            {panelViews
+                ?.filter(panelView => panelView.title !== '')
+                .map(panelView => (
+                    <section key={panelView.id} className="card mt-3">
+                        {panelView.title !== '' && <h3 className="card-header">{panelView.title}</h3>}
+                        {panelView.content && (
+                            <Markdown className="card-body" dangerousInnerHTML={renderMarkdown(panelView.content)} />
+                        )}
+                    </section>
+                ))}
         </div>
     )
 }

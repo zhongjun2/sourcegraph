@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"regexp"
 	"sort"
@@ -481,18 +480,18 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	// and ^b$, which is impossible, so it would return no repositories.
 	{
 		anyNonLiteral := false
-		repoNames := make([]string, len(includePatternRevs))
+		repoNames := make([]string, len(includePatterns))
 		for i, patStr := range includePatterns {
 			p, _ := regexp.Compile(patStr)
 			prefix, complete := p.LiteralPrefix()
-			log.Printf("includePattern=%+v prefix=%q complete=%v", p, prefix, complete)
+			// log.Printf("includePattern=%+v prefix=%q complete=%v", p, prefix, complete)
 			if !complete || !strings.HasPrefix(patStr, "^") || !strings.HasSuffix(patStr, "$") {
 				anyNonLiteral = true
 				break
 			}
 			repoNames[i] = prefix
 		}
-		log.Printf("anyNonLiteral=%v, repoNames=%v", anyNonLiteral, repoNames)
+		// log.Printf("anyNonLiteral=%v, repoNames=%v", anyNonLiteral, repoNames)
 		if !anyNonLiteral {
 			includePatterns = []string{unionRegExps(repoNames)}
 		}
