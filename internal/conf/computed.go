@@ -211,6 +211,19 @@ func SymbolIndexEnabled() bool {
 	return enabled
 }
 
+func CampaignsReadAccessEnabled() bool {
+	if v := Get().CampaignsReadAccessEnabled; v != nil {
+		return *v
+	}
+
+	// DEPRECATED property name.
+	if v := Get().AutomationReadAccessEnabled; v != nil {
+		return *v
+	}
+
+	return false
+}
+
 func UsingExternalURL() bool {
 	url := Get().ExternalURL
 	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK
@@ -258,11 +271,8 @@ func SearchSymbolsParallelism() int {
 	return val
 }
 
-func BitbucketServerFastPerm() bool {
+func BitbucketServerPluginPerm() bool {
 	val := Get().ExperimentalFeatures.BitbucketServerFastPerm
-	if val == "" {
-		return false
-	}
 	return val == "enabled"
 }
 
@@ -293,4 +303,14 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 		return schema.ExperimentalFeatures{}
 	}
 	return *val
+}
+
+// AuthMinPasswordLength returns the value of minimum password length requirement.
+// If not set, it returns the default value 12.
+func AuthMinPasswordLength() int {
+	val := Get().AuthMinPasswordLength
+	if val <= 0 {
+		return 12
+	}
+	return val
 }

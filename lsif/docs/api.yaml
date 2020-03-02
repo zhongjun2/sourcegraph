@@ -58,6 +58,12 @@ paths:
           required: false
           schema:
             type: number
+        - name: indexerName
+          in: query
+          description: The name of the indexer that generated the payload. This is required only if there is no tool info supplied in the payload's metadata vertex.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Processed (synchronously)
@@ -101,9 +107,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/Upload'
-                  - type: null
+                - $ref: '#/components/schemas/Uploads'
     post:
       description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
       tags:
@@ -173,7 +177,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
       responses:
@@ -224,7 +228,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
         - name: limit
@@ -293,7 +297,7 @@ paths:
         - name: uploadId
           in: query
           description: The identifier of the upload to load. If not supplied, the upload nearest to the given commit will be loaded.
-          required: false
+          required: true
           schema:
             type: number
       responses:
@@ -360,7 +364,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Uploads'
+                $ref: '#/components/schemas/PaginatedUploads'
           headers:
             Link:
               description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
@@ -435,9 +439,9 @@ components:
       type: object
       description: A position in a file of a code base.
       properties:
-        repository:
-          type: string
-          description: The repository in which the location occurs.
+        repositoryId:
+          type: number
+          description: The identifier of the repository in which the location occurs.
         commit:
           type: string
           description: The commit in which the location occurs.
@@ -447,7 +451,7 @@ components:
         range:
           $ref: '#/components/schemas/Range'
       required:
-        - repository
+        - repositoryId
         - commit
         - path
         - range
@@ -479,6 +483,15 @@ components:
       additionalProperties: false
     Uploads:
       type: object
+      description: A wrapper for a list of uploads.
+      properties:
+        uploads:
+          type: array
+          description: A list of uploads.
+          items:
+            $ref: '#/components/schemas/Upload'
+    PaginatedUploads:
+      type: object
       description: A paginated wrapper for a list of uploads.
       properties:
         uploads:
@@ -499,15 +512,18 @@ components:
         id:
           type: number
           description: A unique identifier.
-        repository:
-          type: string
-          description: The repository argument given on upload.
+        repositoryId:
+          type: number
+          description: The repository identifier argument given on upload.
         commit:
           type: string
           description: The commit argument given on upload.
         root:
           type: string
           description: The root argument given on upload.
+        indexer:
+          type: string
+          description: The name of the indexer given on upload.
         filename:
           type: string
           description: The filename where the upload was stored before conversion.
@@ -527,21 +543,21 @@ components:
           description: The stacktrace of the upload error.
         uploadedAt:
           type: string
-          description: An ISO 8601-formatted time that the upload was uploaded.
+          description: An RFC3339-formatted time that the upload was uploaded.
         startedAt:
           type: string
-          description: An ISO 8601-formatted time that the conversion started.
+          description: An RFC3339-formatted time that the conversion started.
           nullable: true
         finishedAt:
           type: string
-          description: An ISO 8601-formatted time that the conversion completed or errored.
+          description: An RFC3339-formatted time that the conversion completed or errored.
           nullable: true
         visibleAtTip:
           type: boolean
           description: Whether or not this upload can provide global reference code intelligence.
       required:
         - id
-        - repository
+        - repositoryId
         - commit
         - root
         - filename

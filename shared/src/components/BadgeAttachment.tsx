@@ -13,11 +13,10 @@ export const BadgeAttachment: React.FunctionComponent<{
 
     return (
         <LinkOrSpan
-            // Ensure theme-light exists as an ascendent of the img below, otherwise the
-            // browser extension will always render with a dark theme background. It's bad.
-            className={`badge-decoration-attachment ${isLightTheme ? 'theme-light' : ''}`}
+            className="badge-decoration-attachment"
             to={attachment.linkURL}
             data-tooltip={attachment.hoverMessage}
+            data-placement="left"
             // Use target to open external URLs
             target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
             // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.

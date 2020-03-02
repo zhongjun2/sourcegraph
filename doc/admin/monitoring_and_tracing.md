@@ -27,7 +27,7 @@ This URL will show the home dashboard and from there you can add, modify and del
 If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
 you can access Grafana directly using Kubernetes port forwarding to your local machine:
 
-```bash script
+```bash
 kubectl port-forward svc/grafana 3370:30070
 ``` 
 
@@ -39,7 +39,7 @@ Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-
 such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
 To access the remote server using `sshuttle` from your local machine:
 
-```bash script
+```bash
 sshuttle -r user@host 0/0
 ```
 
@@ -73,6 +73,16 @@ will be detected automatically while Grafana is running.
 
 More behavior can be controlled with
 [environmental variables](https://grafana.com/docs/installation/configuration/).
+
+## Set up alerts
+
+1. [Set up alert channels](monitoring/slack_alert_channel.md)
+1. Set up an alert
+    1. Navigate to the dashboard that contains the panel with the metric you want to alert on.
+    1. The panel title has a small dropdown next to it. Choose Edit.
+    1. On the left navigation bar choose the `Bell` icon for Alert.
+    1. Fill out the rule and add a notification by picking a channel you created before.
+    1. Verify your rule by running `Test Rule` or viewing `State History`.    
 
 ## Additional monitoring and tracing systems
 
