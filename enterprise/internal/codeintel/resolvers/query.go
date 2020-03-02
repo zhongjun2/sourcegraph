@@ -28,7 +28,7 @@ var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
 
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	for _, upload := range r.uploads {
-		position, err := r.adjustPosition(ctx, args.Line, args.Character)
+		position, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 
 	var allLocations []*lsif.LSIFLocation
 	for _, upload := range r.uploads {
-		position, err := r.adjustPosition(ctx, args.Line, args.Character)
+		position, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
 	for _, upload := range r.uploads {
-		position, err := r.adjustPosition(ctx, args.Line, args.Character)
+		position, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
 			return nil, err
 		}
@@ -208,8 +208,8 @@ type Position struct {
 	Character int32
 }
 
-func (r *lsifQueryResolver) adjustPosition(ctx context.Context, line, character int32) (*Position, error) {
-	base := r.upload.Commit
+func (r *lsifQueryResolver) adjustPosition(ctx context.Context, commit string, line, character int32) (*Position, error) {
+	base := commit
 	head := string(r.commit)
 
 	if base == head {
