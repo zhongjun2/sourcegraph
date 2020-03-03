@@ -125,12 +125,12 @@ describe('e2e test suite', () => {
             })
 
             await driver.page.click('.e2e-create-access-token-submit')
-            const token: string = await (
+            const token = (await (
                 await driver.page.waitForFunction(() => {
                     const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
                     return elem?.value
                 })
-            ).jsonValue()
+            ).jsonValue()) as string
 
             const resp = await got.post('/.api/graphql', {
                 baseUrl: sourcegraphBaseUrl,
@@ -297,12 +297,12 @@ describe('e2e test suite', () => {
                 ensureRepos: ['aws/test'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
-            const blob: string = await (
+            const blob = (await (
                 await driver.page.waitFor(() => {
                     const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
                     return elem?.textContent
                 })
-            ).jsonValue()
+            ).jsonValue()) as string
 
             expect(blob).toBe('README\n\nchange')
         })
@@ -327,12 +327,12 @@ describe('e2e test suite', () => {
                 ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
-            const blob: string = await (
+            const blob = (await (
                 await driver.page.waitFor(() => {
                     const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
                     return elem?.textContent
                 })
-            ).jsonValue()
+            ).jsonValue()) as string
 
             expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
         })

@@ -48,7 +48,7 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                     await Promise.all(
                         message.args().map(async argHandle => {
                             try {
-                                const json = await (
+                                const json = (await (
                                     await argHandle.evaluateHandle(value =>
                                         JSON.stringify(value, (key, value) => {
                                             // Check if value is error, because Errors are not serializable but commonly logged
@@ -58,7 +58,7 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                                             return value
                                         })
                                     )
-                                ).jsonValue()
+                                ).jsonValue()) as string
                                 return JSON.parse(json)
                             } catch (err) {
                                 return chalk.italic(`[Could not serialize: ${err.message}]`)
