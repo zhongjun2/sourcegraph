@@ -91,7 +91,7 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
     }
 
     for (const diffType of ['unified', 'split']) {
-        for (const side of ['base', 'head'] as const) {
+        for (const side of ['base' /* , 'head'*/] as const) {
             it(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
                 await driver.page.goto(`https://github.com/gorilla/mux/pull/328/files?diff=${diffType}`)
 
