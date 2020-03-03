@@ -1,6 +1,7 @@
 import { escapeRegExp } from 'lodash'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -36,9 +37,56 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
 }
 
 export function searchURLIsCaseSensitive(query: string): boolean {
+    const queryCaseSensitivty = parseCaseSensitivityFromQuery(query)
+    if (queryCaseSensitivty) {
+        // if `case:` filter exists in the query, override the existing case: query param
+        return queryCaseSensitivty.value === 'yes'
+    }
     const searchParams = new URLSearchParams(query)
     const caseSensitive = searchParams.get('case')
     return caseSensitive === 'yes'
+}
+
+/**
+ * buildSearchQuery takes a URL's query string and returns
+ * an object containing: the query with `patternType` and `case` filters excluded, the effective pattern type,
+ * and effective case sensitivity of the query.
+ *
+ * @param urlQueryString a URL's query string.
+ */
+export function buildSearchQuery(
+    urlQueryString: string
+): { query: string | undefined; patternType: SearchPatternType | undefined; caseSensitive: boolean } {
+    const query = parseSearchURLQuery(urlQueryString)
+    let fullQuery = query || ''
+    let patternType = parseSearchURLPatternType(urlQueryString)
+    let caseSensitive = searchURLIsCaseSensitive(urlQueryString)
+    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
+    if (query) {
+        if (patternTypeInQuery) {
+            const newQuery = fullQuery.replace(
+                fullQuery.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
+                ''
+            )
+            fullQuery = newQuery
+            patternType = patternTypeInQuery.value as SearchPatternType
+        }
+
+        const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
+        if (caseInQuery) {
+            const newQuery = fullQuery.replace(fullQuery.substring(caseInQuery.range.start, caseInQuery.range.end), '')
+
+            if (caseInQuery.value === 'yes') {
+                caseSensitive = true
+            } else if (caseInQuery.value === 'no') {
+                caseSensitive = false
+            }
+
+            fullQuery = newQuery
+        }
+    }
+
+    return { query: fullQuery, patternType, caseSensitive }
 }
 
 export function searchQueryForRepoRev(repoName: string, rev?: string): string {
