@@ -140,7 +140,7 @@ func addCodeCov(pipeline *bk.Pipeline) {
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome" /* , "firefox" */} {
+	for _, browser := range []string{"chrome", "firefox"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
@@ -149,8 +149,10 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts"),
-			bk.Cmd("yarn -s mocha ./src/e2e/gitlab.test.ts"),
+			// `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
+			bk.Cmd("ffmpeg -y -f x11grab -video_size 1280x1024 -i \"$DISPLAY\" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &"),
+			bk.Cmd("env PERCY_ON=true ../node_modules/.bin/percy exec -- yarn -s mocha ./src/e2e/github.test.ts"),
+			// bk.Cmd("yarn -s mocha ./src/e2e/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}

@@ -47,6 +47,11 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                 ...(
                     await Promise.all(
                         message.args().map(async argHandle => {
+                            // needed for puppeteer-firefox, it doesn't support `evaluateHandle`
+                            // eslint-disable-next-line @typescript-eslint/unbound-method
+                            if (!argHandle.evaluateHandle) {
+                                return argHandle.jsonValue()
+                            }
                             try {
                                 const json = await (
                                     await argHandle.evaluateHandle(value =>

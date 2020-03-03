@@ -1,4 +1,7 @@
 import expect from 'expect'
+import puppeteerFirefox from 'puppeteer-firefox'
+import webExt from 'web-ext'
+import getFreePort from 'get-port'
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
@@ -18,7 +21,7 @@ import { readEnvBoolean, retry } from './e2e-test-utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
-import { readFile } from 'mz/fs'
+import { readFile, exists, mkdir, appendFile } from 'mz/fs'
 import { Settings } from '../settings/settings'
 import { fromEvent } from 'rxjs'
 import { filter, map, concatAll } from 'rxjs/operators'
@@ -117,6 +120,28 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
     return `Array.from(document.querySelectorAll(${JSON.stringify(
         tag
     )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
+}
+
+// Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
+async function getFirefoxCfgPath(): Promise<string> {
+    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
+    let configPath: string
+    if (process.platform === 'darwin') {
+        configPath = path.join(firefoxFolder, '..', 'Resources')
+    } else if (process.platform === 'linux') {
+        if (!(await exists(path.join(firefoxFolder, 'browser', 'defaults')))) {
+            await mkdir(path.join(firefoxFolder, 'browser', 'defaults'))
+        }
+        if (!(await exists(path.join(firefoxFolder, 'browser', 'defaults', 'preferences')))) {
+            await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+        }
+        configPath = firefoxFolder
+    } else if (process.platform === 'win32') {
+        configPath = firefoxFolder
+    } else {
+        throw new Error('Unsupported platform: ' + process.platform)
+    }
+    return path.join(configPath, 'puppeteer.cfg')
 }
 
 export class Driver {
@@ -616,33 +641,61 @@ interface DriverOptions extends LaunchOptions {
 
     /** If true, keep browser open when driver is closed */
     keepBrowser?: boolean
+    browserVendor?: 'chrome' | 'firefox'
 }
 
 export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
-    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser, browserVendor = 'chrome' } = options
     const args = ['--window-size=1280,1024']
-    if (process.getuid() === 0) {
-        // TODO don't run as root in CI
-        console.warn('Running as root, disabling sandbox')
-        args.push('--no-sandbox', '--disable-setuid-sandbox')
-    }
-    if (loadExtension) {
-        const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
-        const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8'))
-        if (!manifest.permissions.includes('<all_urls>')) {
-            throw new Error(
-                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
-            )
+    let browser: puppeteer.Browser
+
+    if (browserVendor === 'chrome') {
+        if (loadExtension) {
+            const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+            const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8'))
+            if (!manifest.permissions.includes('<all_urls>')) {
+                throw new Error(
+                    'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+                )
+            }
+            args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
         }
-        args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
+        if (process.getuid() === 0) {
+            // TODO don't run as root in CI
+            console.warn('Running as root, disabling sandbox')
+            args.push('--no-sandbox', '--disable-setuid-sandbox')
+        }
+        browser = await puppeteer.launch({
+            ...options,
+            args,
+            headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+            defaultViewport: null,
+        })
+    } else {
+        // Make sure CSP is disabled in FF preferences,
+        // because Puppeteer uses new Function() to evaluate code
+        // which is not allowed by the github.com CSP.
+        const cfgPath = await getFirefoxCfgPath()
+        const disableCspPreference = '\npref("security.csp.enable", false);\n'
+        if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
+            await appendFile(cfgPath, disableCspPreference)
+        }
+
+        const cdpPort = await getFreePort()
+        const firefoxExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'firefox')
+        // webExt.util.logger.consoleStream.makeVerbose()
+        await webExt.cmd.run(
+            {
+                sourceDir: firefoxExtensionPath,
+                firefox: puppeteerFirefox.executablePath(),
+                args: [`-juggler=${cdpPort}`, '-headless'],
+            },
+            { shouldExitProgram: false }
+        )
+        const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
+        browser = await puppeteerFirefox.connect({ browserWSEndpoint })
     }
 
-    const browser = await puppeteer.launch({
-        ...options,
-        args,
-        headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
-        defaultViewport: null,
-    })
     const page = await browser.newPage()
     if (logBrowserConsole) {
         fromEvent<ConsoleMessage>(page, 'console')
