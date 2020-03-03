@@ -151,7 +151,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Cmd("yarn -s run build"),
 			// `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
 			bk.Cmd("ffmpeg -y -f x11grab -video_size 1280x1024 -i \"$DISPLAY\" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &"),
-			bk.Cmd("env PERCY_TOKEN=$PERCY_BEXT_TOKEN PERCY_ON=true ../node_modules/.bin/percy exec -- yarn -s mocha ./src/e2e/github.test.ts"),
+			bk.Cmd("env PERCY_TOKEN=$PERCY_BEXT_TOKEN PERCY_ON=true PERCY_PARALLEL_TOTAL=2 PERCY_PARALLEL_NONCE=$BUILDKITE_BUILD_ID ../node_modules/.bin/percy exec -- yarn -s mocha ./src/e2e/github.test.ts"),
 			// bk.Cmd("yarn -s mocha ./src/e2e/gitlab.test.ts"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png;./browser/e2e.mp4;./browser/ffmpeg.log"))

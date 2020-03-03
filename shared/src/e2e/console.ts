@@ -31,12 +31,12 @@ export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Pr
                 .join(':')
         )
     // Right-align location, like in Chrome dev tools
+    let atOffset = terminalSize().columns - stringWidth(formattedLocation)
+    if (atOffset < 0) {
+        atOffset = 0
+    }
     const locationLine = chalk.dim(
-        formattedLocation &&
-            '\n' +
-                (!process.env.CI
-                    ? ' '.repeat(terminalSize().columns - stringWidth(formattedLocation)) + formattedLocation
-                    : '\t' + formattedLocation)
+        '\n' + (!process.env.CI ? ' '.repeat(atOffset) + formattedLocation : '\t' + formattedLocation)
     )
     return [
         chalk.bold('🖥  Browser console:'),

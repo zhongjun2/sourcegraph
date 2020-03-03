@@ -49,6 +49,9 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
             logBrowserConsole: true,
             browserVendor: BROWSER,
         })
+        if (BROWSER === 'chrome') {
+            await driver.page.setBypassCSP(true)
+        }
     })
 
     // Close browser.
@@ -65,7 +68,7 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
 
     it('injects View on Sourcegraph', async () => {
         await driver.page.goto(repoBaseURL)
-        await driver.page.waitForSelector('li#open-on-sourcegraph')
+        await driver.page.waitForSelector('li#open-on-sourcegraph', { timeout: 30000 })
         await percySnapshot(driver.page, 'Injects View on Sourcegraph')
     })
 
