@@ -69,12 +69,13 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
     it('injects View on Sourcegraph', async () => {
         await driver.page.goto(repoBaseURL)
         await driver.page.waitForSelector('li#open-on-sourcegraph', { timeout: 30000 })
-        await percySnapshot(driver.page, 'Injects View on Sourcegraph')
+        await percySnapshot(driver.page, `Injects View on Sourcegraph: ${BROWSER}`)
     })
 
     it('injects toolbar for code views', async () => {
         await driver.page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
         await driver.page.waitForSelector('.code-view-toolbar')
+        await percySnapshot(driver.page, `Injects toolbar for code views: ${BROWSER}`)
     })
 
     it('provides tooltips for single file', async () => {
@@ -86,6 +87,7 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
         await clickElement(driver.page, element)
 
         await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
+        await percySnapshot(driver.page, `Provides tooltips for single file: ${BROWSER}`)
     })
 
     const tokens = {
@@ -106,6 +108,7 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
                 await driver.page.waitForSelector('[data-path="regexp.go"] .code-view-toolbar .open-on-sourcegraph')
                 await clickElement(driver.page, element)
                 await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
+                await percySnapshot(driver.page, `Provides tooltips for diff files (${diffType}, ${side}): ${BROWSER}`)
             })
         }
     }
